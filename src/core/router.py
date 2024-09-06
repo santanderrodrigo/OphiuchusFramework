@@ -1,6 +1,6 @@
 # router.py
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from core.routes import routes
+from core.routes import routes as routes_dict, create_route_registrar
 from http.cookies import SimpleCookie
 from core.utils import load_env_file
 from middlewares.csrf_middleware import CSRFMiddleware
@@ -8,15 +8,28 @@ from middlewares.auth_middleware import AuthMiddleware
 from core.response import Response
 from core.middleware_base import MiddlewareInterface
 from core.dependency_injector import DependencyInjector
+from core.middleware_factory import MiddlewareFactory
+from core.session_service import SessionService
+
+import routes.routes as routes_module
 
 load_env_file('.env')
 global_middlewares = []
 
 # Crear una instancia del inyector de dependencias
 injector = DependencyInjector()
-# Registrar el SessionService en el inyector
-#session_service = SessionService()
-#injector.register('session_service', session_service)
+# Crear una instancia de la fábrica de middlewares
+middleware_factory = MiddlewareFactory(injector)
+
+# Instanciar el CSRFMiddleware usando la fábrica
+csrf_middleware = middleware_factory.create(CSRFMiddleware)
+# Registrar el CSRFMiddleware como un middleware global
+global_middlewares.append(csrf_middleware)
+
+# Crear la función de registro de rutas con el inyector de dependencias
+register_route_with_injector = create_route_registrar(injector)
+
+
 
 class RequestHandler(BaseHTTPRequestHandler):
 
@@ -27,19 +40,18 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.handle_request('POST')
 
     def handle_request(self, method):
-        try:
+        #try:
             self.parse_cookies()
             self.parse_query_string()
             
-            if method in routes and self.path in routes[method]:
-                route_info = routes[method][self.path]
+            if method in routes_dict and self.path in routes_dict[method]:
+                route_info = routes_dict[method][self.path]
 
                 # Ejecuta los middlewares globales
                 middleware_response = self.execute_middlewares(global_middlewares, 'request')
                 if middleware_response:
                     self._send_response(middleware_response)
                     return
-
 
                 # Ejecuta los middlewares de la ruta
                 middleware_response = self.execute_middlewares(route_info['middlewares'], 'request')
@@ -71,14 +83,14 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self._send_response(response)
             else:
                 # Verificar si la ruta existe para otros métodos
-                allowed_methods = [m for m in routes if self.path in routes[m]]
+                allowed_methods = [m for m in routes_dict if self.path in routes_dict[m]]
                 if allowed_methods:
                     self.send_error(405, 'Method Not Allowed')
                 else:
                     self.send_error(404, 'Page not found')
 
-        except Exception as e:
-            self.send_error(500, f'Internal server error: {str(e)}')
+        #except Exception as e:
+         #   self.send_error(500, f'Internal server error: {str(e)}')
 
     def get_request_data(self):
         content_length = int(self.headers.get('Content-Length', 0))
@@ -129,11 +141,9 @@ class RequestHandler(BaseHTTPRequestHandler):
 
 def run(server_class=HTTPServer, handler_class=RequestHandler, port=8080):
     # Instanciar el CSRFMiddleware
-    csrf_middleware = CSRFMiddleware()
+    #csrf_middleware = CSRFMiddleware()
     # Registrar el CSRFMiddleware como un middleware global
-    global_middlewares.append(csrf_middleware)
-
-
+    #global_middlewares.append(csrf_middleware)
 
    
     server_address = ('', port)

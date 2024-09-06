@@ -1,7 +1,10 @@
 # middlewares/auth_middleware.py
 from core.middleware_base import MiddlewareBase
 from core.response import Response
+from core.session_service import SessionService
 
+# Crear una instancia de session_service
+session_service = SessionService()
 
 class AuthMiddleware(MiddlewareBase):
     def process_request(self, handler):

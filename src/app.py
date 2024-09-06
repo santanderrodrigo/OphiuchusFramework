@@ -1,6 +1,5 @@
 # app.py
 import sys
-from routes import routes
 from core.router import run
 from core.updater.updater import Updater
 
