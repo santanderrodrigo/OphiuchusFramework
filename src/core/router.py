@@ -4,11 +4,19 @@ from core.routes import routes
 from http.cookies import SimpleCookie
 from core.utils import load_env_file
 from middlewares.csrf_middleware import CSRFMiddleware
+from middlewares.auth_middleware import AuthMiddleware
 from core.response import Response
-from core.middleware_base import MiddlewareBase
+from core.middleware_base import MiddlewareInterface
+from core.dependency_injector import DependencyInjector
 
 load_env_file('.env')
 global_middlewares = []
+
+# Crear una instancia del inyector de dependencias
+injector = DependencyInjector()
+# Registrar el SessionService en el inyector
+#session_service = SessionService()
+#injector.register('session_service', session_service)
 
 class RequestHandler(BaseHTTPRequestHandler):
 
@@ -62,7 +70,12 @@ class RequestHandler(BaseHTTPRequestHandler):
 
                 self._send_response(response)
             else:
-                self.send_error(404, 'Page not found')
+                # Verificar si la ruta existe para otros métodos
+                allowed_methods = [m for m in routes if self.path in routes[m]]
+                if allowed_methods:
+                    self.send_error(405, 'Method Not Allowed')
+                else:
+                    self.send_error(404, 'Page not found')
 
         except Exception as e:
             self.send_error(500, f'Internal server error: {str(e)}')
@@ -80,7 +93,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         for middleware in middlewares:
             print(f"Executing middleware {middleware}")
             print("name => ",type(middleware))
-            if isinstance(middleware, MiddlewareBase):
+            if isinstance(middleware, MiddlewareInterface):
                 if phase == 'request':
                     response = middleware.process_request(self)
                 elif phase == 'response':
@@ -119,6 +132,9 @@ def run(server_class=HTTPServer, handler_class=RequestHandler, port=8080):
     csrf_middleware = CSRFMiddleware()
     # Registrar el CSRFMiddleware como un middleware global
     global_middlewares.append(csrf_middleware)
+
+
+
    
     server_address = ('', port)
     httpd = server_class(server_address, handler_class)
