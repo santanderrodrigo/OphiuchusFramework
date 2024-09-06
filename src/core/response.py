@@ -1,8 +1,10 @@
 class Response:
-    def __init__(self, content, status=200, content_type='text/html'):
+    def __init__(self, content, status=200, content_type='text/html', headers=None):
         self.content = content
         self.status = status
         self.headers = {'Content-Type': content_type}
+        if headers:
+            self.headers.update(headers)
         self.cookies = {}
 
     def set_cookie(self, key, value):
@@ -14,7 +16,8 @@ class Response:
             self.headers['Set-Cookie'] = cookie_header
         return self.headers
 
-    
+    def set_header(self, header, value):
+        self.headers[header] = value
 
     @staticmethod
     def json(data, status=200):

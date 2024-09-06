@@ -1,6 +1,7 @@
-#core.routes.py
+# core.routes.py
 import importlib
 from core.dependency_injector import DependencyInjector
+from core.middleware_factory import MiddlewareFactory
 
 # Diccionario de rutas para asociar las rutas con sus controladores y acciones
 routes = {
@@ -23,7 +24,9 @@ def register_route(method, path, controller_name, action, middlewares=[], depend
 
         # Si se proporciona un inyector de dependencias, instanciar los middlewares con él
         if dependency_injector:
-            middlewares = [middleware(dependency_injector) for middleware in middlewares]
+            print("Inyectando dependencias en middlewares", dependency_injector)
+            middleware_factory = MiddlewareFactory(dependency_injector)
+            middlewares = [middleware_factory.create(middleware) for middleware in middlewares]
 
         # Registra la ruta en el sistema, guardando la clase del controlador y la acción
         routes[method][path] = {

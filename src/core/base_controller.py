@@ -21,11 +21,16 @@ class BaseControllerInterface(ABC):
     def not_allowed(self):
         raise NotImplementedError
 
+    @abstractmethod
+    def redirect(self, url, status=302):
+        raise NotImplementedError
+
 class BaseController(BaseControllerInterface):
     def __init__(self, handler, dependency_injector):
         self.handler = handler
         self.cookies = handler.cookies  # Acceso a las cookies
         self.query_params = handler.query_params  # Acceso a los parámetros de la URL
+        self.post_params = handler.post_params
         self.view = View  # Definir View como un atributo de instancia
         self.send_headers = []  # Almacenar las cabeceras que se deben enviar
         self.send_cookies = []  # Almacenar las cookies que se deben enviar
@@ -56,3 +61,14 @@ class BaseController(BaseControllerInterface):
     
     def not_allowed(self):
         return Response("Not allowed", status=403)
+
+    # Métodos para redirigir a una ruta nueva
+    def redirect(self, url, status=302):
+        print(f'Redirecting to {url}')
+        response = Response('', status, 'text/html', {'Location': url})
+        for header, value in self.send_headers:
+            response.set_header(header, value)
+        for cookie in self.send_cookies:
+            response.set_cookie(cookie[0], cookie[1])
+        return response
+        

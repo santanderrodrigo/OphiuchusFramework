@@ -10,14 +10,15 @@ class CSRFMiddleware(MiddlewareBase):
         # Verificar el token CSRF en solicitudes POST
         print("CSRFMiddleware:process_request")
         if handler.command == 'POST':
-            content_length = int(handler.headers.get('Content-Length', 0))
-            post_data = handler.rfile.read(content_length).decode('utf-8')
-            post_params = parse_qs(post_data)
-            csrf_token = post_params.get('csrf_token', [None])[0]
+            print("Handling POST request")
+            csrf_token = handler.post_params.get('csrf_token', [None])[0]
+            print(f"Received CSRF token: {csrf_token}")
 
             if not csrf_token or not self._is_valid_token(handler, csrf_token):
-                return Response("Invalid CSRF token", status=403)
+                print("Invalid CSRF token")
+                return Response('CSRF token is invalid', 403)
         return None
+        
 
     def process_response(self, handler, response):
         # Verificar si ya existe un token CSRF en las cookies

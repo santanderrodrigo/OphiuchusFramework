@@ -1,5 +1,6 @@
 # router.py
 import os
+from urllib.parse import parse_qs
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from core.routes import routes as routes_dict, create_route_registrar
 from http.cookies import SimpleCookie
@@ -12,8 +13,6 @@ from core.dependency_injector import DependencyInjector
 from core.middleware_factory import MiddlewareFactory
 from core.session_service import SessionService
 import routes.routes as routes_config
-
-
 
 load_env_file('.env')
 global_middlewares = []
@@ -28,15 +27,18 @@ csrf_middleware = middleware_factory.create(CSRFMiddleware)
 # Registrar el CSRFMiddleware como un middleware global
 global_middlewares.append(csrf_middleware)
 
+#instanciamos el servicio de session
+session_service = SessionService()
+# Registramos el servicio de session en el inyector de dependencias
+injector.register('SessionService', session_service)
+
 # Crear la función de registro de rutas con el inyector de dependencias
 register_route_with_injector = create_route_registrar(injector)
 # Pasar el inyector de dependencias a la configuración de rutas
 routes_config.register_routes(injector)
 
-#instanciamos el servicio de session
-session_service = SessionService()
-# Registramos el servicio de session en el inyector de dependencias
-injector.register('SessionService', session_service)
+
+print(f"SessionService registered: {injector.resolve('SessionService')}")
 
 
 class RequestHandler(BaseHTTPRequestHandler):
@@ -66,6 +68,10 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self.send_header('Content-Type', 'image/jpeg')
             elif file_path.endswith('.gif'):
                 self.send_header('Content-Type', 'image/gif')
+            elif file_path.endswith('.svg'):
+                self.send_header('Content-Type', 'image/svg+xml')
+            elif file_path.endswith('.ico'):
+                self.send_header('Content-Type', 'image/x-icon')
             else:
                 self.send_header('Content-Type', 'application/octet-stream')
             self.end_headers()
@@ -79,6 +85,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         #try:
             self.parse_cookies()
             self.parse_query_string()
+            self.post_params = self.get_request_data()
             
             if method in routes_dict and self.path in routes_dict[method]:
                 route_info = routes_dict[method][self.path]
