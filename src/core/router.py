@@ -1,7 +1,9 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from core.routes import routes
 from core.middleware_manager import MiddlewareManager
+from core.utils import load_env_file
 
+load_env_file( '.env' )
 global_middlewares = []
 # Crear una instancia global de MiddlewareManager
 middleware_manager = MiddlewareManager()
@@ -60,7 +62,6 @@ class RequestHandler(BaseHTTPRequestHandler):
             else:
                 print(f"Error: Middleware {middleware} is not callable")
         return None
-    
 
 def run(server_class=HTTPServer, handler_class=RequestHandler, port=8080):
     middleware_manager.load_middlewares()
