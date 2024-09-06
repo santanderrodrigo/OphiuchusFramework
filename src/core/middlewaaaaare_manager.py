@@ -1,11 +1,12 @@
 import os
 import importlib
 
-
 class MiddlewareManager:
 
     def __init__(self):
-        self.middlewares = []        
+        self.middlewares = []
+        self.global_middlewares = []
+        
 
     def load_middlewares(self):
         """Cargar todos los middlewares desde la carpeta 'middlewares'."""
@@ -20,9 +21,9 @@ class MiddlewareManager:
                     if callable(getattr(module, attr)) and attr.endswith('_middleware'):
                         self.add_middleware(getattr(module, attr))
 
-    # Registra un middleware global
-    def register_global_middleware(middleware):
-        global_middlewares.append(middleware)
+    def register_global_middleware(self, middleware):
+        """Registrar un middleware global."""
+        self.global_middlewares.append(middleware)
 
     def add_middleware(self, middleware):
         """Registrar un nuevo middleware."""
@@ -30,8 +31,10 @@ class MiddlewareManager:
 
     def process(self, request):
         """Ejecutar cada middleware con la solicitud actual."""
+        print('Ejecutando middlewares...')
         for middleware in self.middlewares:
             result = middleware(request)
             if result is not None:
                 return result  # Si algún middleware devuelve algo, detener procesamiento
         return None
+

@@ -1,4 +1,5 @@
 import os
+from core.helpers import Helpers
 
 class View:
     def __init__(self, view_name, context={}):
@@ -14,7 +15,7 @@ class View:
                 template = file.read()
             # Reemplazamos los espacios reservados en la plantilla con los valores del contexto
             for key, value in self.context.items():
-                template = template.replace(f'{{{{ {key} }}}}', str(value))
+                template = template.replace(f'{{{{ {key} }}}}', Helpers.sanitize_text(str(value)))
 
             return template
         except FileNotFoundError:

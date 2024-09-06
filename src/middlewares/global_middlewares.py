@@ -1,3 +1,0 @@
-from core.middleware_manager import register_global_middleware
-
-register_global_middleware(some_global_middleware)
