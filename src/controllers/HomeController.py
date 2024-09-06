@@ -1,7 +1,8 @@
 # controllers/home_controller.py
-from core.view_render import View
+from core.base_controller import BaseController
 
-class HomeController:
+
+class HomeController(BaseController):
     def index(self):
         # Lógica del controlador
         context = {
@@ -9,7 +10,7 @@ class HomeController:
             "header": "Welcome to the Home Page",
             "content": "This is the content of the home page."
         }
-        return View("home", context)
+        return self.view("home", context)
 
     def about(self):
         # Lógica del controlador
@@ -18,4 +19,4 @@ class HomeController:
             "header": "About Us",
             "content": "This is the content of the about page."
         }
-        return View("about", context)
+        return self.view("about", context)

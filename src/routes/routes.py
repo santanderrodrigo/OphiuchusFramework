@@ -5,5 +5,6 @@ from middlewares.auth_middleware import auth_middleware  # Importa el middleware
 register_route('GET', '/', 'HomeController', 'index')
 register_route('GET', '/about', 'HomeController', 'about')
 register_route('GET', '/text', 'DashboardController', 'show_dashboard')
+register_route('POST', '/submit', 'DashboardController', 'submit_text')
 
 # Puedes registrar más rutas aquí...
