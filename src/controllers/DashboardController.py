@@ -10,6 +10,9 @@ class DashboardController(BaseController):
             <button type="submit">Submit</button>
         </form>
         """
+
+        print("DashboardController:show_dashboard", csrf_token)
+
         return self.response(content=form_html, status=200, content_type='text/html')
 
     def submit_text(self):

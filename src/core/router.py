@@ -5,6 +5,7 @@ from http.cookies import SimpleCookie
 from core.utils import load_env_file
 from middlewares.csrf_middleware import CSRFMiddleware
 from core.response import Response
+from core.middleware_base import MiddlewareBase
 
 load_env_file('.env')
 global_middlewares = []
@@ -25,8 +26,15 @@ class RequestHandler(BaseHTTPRequestHandler):
             if method in routes and self.path in routes[method]:
                 route_info = routes[method][self.path]
 
+                # Ejecuta los middlewares globales
+                middleware_response = self.execute_middlewares(global_middlewares, 'request')
+                if middleware_response:
+                    self._send_response(middleware_response)
+                    return
+
+
                 # Ejecuta los middlewares de la ruta
-                middleware_response = self.execute_middlewares(route_info['middlewares'])
+                middleware_response = self.execute_middlewares(route_info['middlewares'], 'request')
                 if middleware_response:
                     self._send_response(middleware_response)
                     return
@@ -46,6 +54,12 @@ class RequestHandler(BaseHTTPRequestHandler):
                         response_content = response_content.render()
                     response = Response(response_content)
 
+                # Ejecuta los middlewares de la respuesta
+                response = self.execute_middlewares(route_info['middlewares'], 'response', response)
+
+                # Ejecuta los middlewares globales de la respuesta
+                response = self.execute_middlewares(global_middlewares, 'response', response)
+
                 self._send_response(response)
             else:
                 self.send_error(404, 'Page not found')
@@ -62,16 +76,20 @@ class RequestHandler(BaseHTTPRequestHandler):
                 return parse_qs(post_data.decode('utf-8'))
         return {}
 
-    def execute_middlewares(self, middlewares):
+    def execute_middlewares(self, middlewares, phase, response=None):
         for middleware in middlewares:
             print(f"Executing middleware {middleware}")
-            if callable(middleware):
-                response = middleware(self)
+            print("name => ",type(middleware))
+            if isinstance(middleware, MiddlewareBase):
+                if phase == 'request':
+                    response = middleware.process_request(self)
+                elif phase == 'response':
+                    response = middleware.process_response(self, response)
                 if response:
                     return response
             else:
-                print(f"Error: Middleware {middleware} is not callable")
-        return None
+                print(f"Error: Middleware {middleware} does not implement MiddlewareBase")
+        return response
 
     def parse_cookies(self):
         cookie_header = self.headers.get('Cookie')
@@ -96,14 +114,11 @@ class RequestHandler(BaseHTTPRequestHandler):
         if response.content:
             self.wfile.write(response.content.encode())
 
-    
-
-
 def run(server_class=HTTPServer, handler_class=RequestHandler, port=8080):
     # Instanciar el CSRFMiddleware
     csrf_middleware = CSRFMiddleware()
     # Registrar el CSRFMiddleware como un middleware global
-    global_middlewares.append(csrf_middleware.process_request)
+    global_middlewares.append(csrf_middleware)
    
     server_address = ('', port)
     httpd = server_class(server_address, handler_class)

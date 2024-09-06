@@ -14,6 +14,8 @@ class Response:
             self.headers['Set-Cookie'] = cookie_header
         return self.headers
 
+    
+
     @staticmethod
     def json(data, status=200):
         import json

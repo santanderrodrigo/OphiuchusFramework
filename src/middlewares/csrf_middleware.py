@@ -3,10 +3,12 @@ import hmac
 import hashlib
 from urllib.parse import parse_qs
 from core.response import Response
+from core.middleware_base import MiddlewareBase
 
-class CSRFMiddleware:
+class CSRFMiddleware(MiddlewareBase):
     def process_request(self, handler):
         # Verificar el token CSRF en solicitudes POST
+        print("CSRFMiddleware:process_request")
         if handler.command == 'POST':
             content_length = int(handler.headers.get('Content-Length', 0))
             post_data = handler.rfile.read(content_length).decode('utf-8')
@@ -25,12 +27,14 @@ class CSRFMiddleware:
         return response
 
     def _generate_csrf_token(self):
-        import secrets
-        return secrets.token_hex(16)
+        # Generar un nuevo token CSRF
+        return hmac.new(os.urandom(16), digestmod=hashlib.sha256).hexdigest()
 
     def _is_valid_token(self, handler, token):
         # Obtener el token CSRF almacenado en las cookies
         stored_token = handler.cookies.get('csrf_token')
+
+        print("Stored token:", stored_token, "Received token:", token)
 
         # Verificar si el token recibido coincide con el almacenado
         return stored_token and hmac.compare_digest(token, stored_token)
