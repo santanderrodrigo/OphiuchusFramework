@@ -6,7 +6,7 @@ from core.session_service import SessionService
 class AuthMiddleware(MiddlewareBase):
     def __init__(self, dependency_injector):
         super().__init__(dependency_injector)
-        self.session_service = dependency_injector.resolve(SessionService)
+        self.session_service = dependency_injector.resolve('SessionService')
 
     def process_request(self, handler):
         session_id = handler.cookies.get('session_id')

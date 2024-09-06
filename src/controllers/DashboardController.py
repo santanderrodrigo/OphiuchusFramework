@@ -1,7 +1,15 @@
 from core.base_controller import BaseController
+from core.session_service import SessionService
 
 class DashboardController(BaseController):
+    def __init__(self, handler, dependency_injector = None):
+        super().__init__(handler, dependency_injector)
+        #obtenemos el service de la session
+        self.session_service = dependency_injector.resolve(SessionService)
+
     def show_dashboard(self):
+
+
         csrf_token = self.get_csrf_token()
         form_html = f"""
         <form method="POST" action="/submit">

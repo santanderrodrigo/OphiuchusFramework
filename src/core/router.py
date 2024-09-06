@@ -1,4 +1,5 @@
 # router.py
+import os
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from core.routes import routes as routes_dict, create_route_registrar
 from http.cookies import SimpleCookie
@@ -32,9 +33,13 @@ register_route_with_injector = create_route_registrar(injector)
 # Pasar el inyector de dependencias a la configuración de rutas
 routes_config.register_routes(injector)
 
+#instanciamos el servicio de session
+session_service = SessionService()
+# Registramos el servicio de session en el inyector de dependencias
+injector.register('SessionService', session_service)
+
 
 class RequestHandler(BaseHTTPRequestHandler):
-
     def do_GET(self):
         self.handle_request('GET')
 
@@ -42,6 +47,35 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.handle_request('POST')
 
     def handle_request(self, method):
+        if self.path.startswith('/assets/'):
+            self.serve_static_file()
+        else:
+            self.handle_dynamic_request(method)
+
+    def serve_static_file(self):
+        file_path = self.path.lstrip('/')
+        if os.path.exists(file_path) and os.path.isfile(file_path):
+            self.send_response(200)
+            if file_path.endswith('.css'):
+                self.send_header('Content-Type', 'text/css')
+            elif file_path.endswith('.js'):
+                self.send_header('Content-Type', 'application/javascript')
+            elif file_path.endswith('.png'):
+                self.send_header('Content-Type', 'image/png')
+            elif file_path.endswith('.jpg') or file_path.endswith('.jpeg'):
+                self.send_header('Content-Type', 'image/jpeg')
+            elif file_path.endswith('.gif'):
+                self.send_header('Content-Type', 'image/gif')
+            else:
+                self.send_header('Content-Type', 'application/octet-stream')
+            self.end_headers()
+            with open(file_path, 'rb') as file:
+                self.wfile.write(file.read())
+        else:
+            self.send_error(404, 'File not found')
+
+
+    def handle_dynamic_request(self, method):
         #try:
             self.parse_cookies()
             self.parse_query_string()
@@ -63,7 +97,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
                 # Instanciar el controlador con el request y los datos
                 controller_class = route_info['controller']
-                controller_instance = controller_class(self)
+                controller_instance = controller_class(self, dependency_injector=injector)
 
                 # Invocar la función del controlador
                 controller_function = getattr(controller_instance, route_info['action'])

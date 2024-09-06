@@ -22,13 +22,15 @@ class BaseControllerInterface(ABC):
         raise NotImplementedError
 
 class BaseController(BaseControllerInterface):
-    def __init__(self, handler):
+    def __init__(self, handler, dependency_injector):
         self.handler = handler
         self.cookies = handler.cookies  # Acceso a las cookies
         self.query_params = handler.query_params  # Acceso a los parámetros de la URL
         self.view = View  # Definir View como un atributo de instancia
         self.send_headers = []  # Almacenar las cabeceras que se deben enviar
         self.send_cookies = []  # Almacenar las cookies que se deben enviar
+        self.dependency_injector = dependency_injector
+
 
     def get_csrf_token(self):
         # Intenta obtener el token CSRF de las cookies

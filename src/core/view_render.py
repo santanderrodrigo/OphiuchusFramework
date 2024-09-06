@@ -16,6 +16,10 @@ class View:
             # Reemplazamos los espacios reservados en la plantilla con los valores del contexto
             for key, value in self.context.items():
                 template = template.replace(f'{{{{ {key} }}}}', Helpers.sanitize_text(str(value)))
+            # Reemplazamos los espacios reservados en la plantilla con los valores del contexto
+            # sin pasar por la función de sanitización {{ !key }}
+            for key, value in self.context.items():
+                template = template.replace(f'{{{{ !{key} }}}}', str(value))
 
             return template
         except FileNotFoundError:
