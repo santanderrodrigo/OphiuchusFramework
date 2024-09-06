@@ -10,8 +10,9 @@ from core.middleware_base import MiddlewareInterface
 from core.dependency_injector import DependencyInjector
 from core.middleware_factory import MiddlewareFactory
 from core.session_service import SessionService
+import routes.routes as routes_config
 
-import routes.routes as routes_module
+
 
 load_env_file('.env')
 global_middlewares = []
@@ -28,7 +29,8 @@ global_middlewares.append(csrf_middleware)
 
 # Crear la función de registro de rutas con el inyector de dependencias
 register_route_with_injector = create_route_registrar(injector)
-
+# Pasar el inyector de dependencias a la configuración de rutas
+routes_config.register_routes(injector)
 
 
 class RequestHandler(BaseHTTPRequestHandler):
