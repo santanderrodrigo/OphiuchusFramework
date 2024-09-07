@@ -5,14 +5,14 @@ from core.routes import create_route_registrar
 
 def register_routes(injector):
     # Crear la función de registro de rutas con el inyector de dependencias
-    register_route_with_injector = create_route_registrar(injector)
+    add_route = create_route_registrar(injector)
 
     # Registra rutas con el controlador y acción correspondientes
-    register_route_with_injector('GET', '/', 'HomeController', 'index')
-    register_route_with_injector('GET', '/dashboard', 'DashboardController', 'show_dashboard', [AuthMiddleware])
-    register_route_with_injector('GET', '/login', 'LoginController', 'show')
-    register_route_with_injector('POST', '/login', 'LoginController', 'login')
-    register_route_with_injector('GET', '/logout', 'LoginController', 'logout')
-    register_route_with_injector('GET', '/about', 'HomeController', 'about')
+    add_route('GET', '/', 'HomeController', 'index')
+    add_route('GET', '/dashboard', 'DashboardController', 'show_dashboard', [AuthMiddleware])
+    add_route('GET', '/login', 'LoginController', 'show')
+    add_route('POST', '/login', 'LoginController', 'login')
+    add_route('GET', '/logout', 'LoginController', 'logout')
+    add_route('GET', '/about', 'HomeController', 'about')
 
-    # Puedes registrar más rutas aquí...
+    # Puedes registrar más rutas aquí... 

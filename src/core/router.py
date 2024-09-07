@@ -5,7 +5,6 @@ from core.routes import routes as routes_dict, create_route_registrar
 from http.cookies import SimpleCookie
 from core.utils import load_env_file
 from middlewares.csrf_middleware import CSRFMiddleware
-from middlewares.auth_middleware import AuthMiddleware
 from core.response import Response
 from core.middleware_base import MiddlewareInterface
 from core.dependency_injector import DependencyInjector
