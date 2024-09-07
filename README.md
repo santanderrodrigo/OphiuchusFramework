@@ -6,6 +6,10 @@ Este es un framework personalizado para construir aplicaciones web en Python. A 
 
 - `src/`
   - `app.py`: Archivo principal para ejecutar la aplicación.
+  - `assets/`
+    - `img/`
+    - `css/`
+    - `js/`
   - `core/`
     - `router.py`: Manejador de rutas y servidor HTTP.
   - `routes/`
@@ -19,12 +23,18 @@ Este es un framework personalizado para construir aplicaciones web en Python. A 
 
 Las rutas se definen en el archivo `routes/routes.py`. Aquí es donde se asocian las rutas con sus respectivos controladores y acciones.
 
+register_route_with_injector(METODO, PATH, CONTROLLER NAME, CONTROLER FUNCTION,  [LISTA DE MIDDLEWARES])
+
+Los middlewares deberán pasarse como nombre de da la clase
+
 Ejemplo:
 ```python
-from routes import register_route
-
-register_route('GET', '/', 'HomeController', 'index')
-register_route('POST', '/submit', 'FormController', 'submit')
+    register_route_with_injector('GET', '/', 'HomeController', 'index')
+    register_route_with_injector('GET', '/dashboard', 'DashboardController', 'show_dashboard', [AuthMiddleware])
+    register_route_with_injector('GET', '/login', 'LoginController', 'show')
+    register_route_with_injector('POST', '/login', 'LoginController', 'login')
+    register_route_with_injector('GET', '/logout', 'LoginController', 'logout')
+    register_route_with_injector('GET', '/about', 'HomeController', 'about')
 ```
 
 ### 2. Crear Controladores
@@ -43,6 +53,20 @@ Ejemplo con retorno de vista:
 class HomeController(BaseController):
     def index(self):
         return self.view("home")
+```
+Ejemplo con retorno de vista con contexto:
+```python
+# controllers/HomeController.py
+class HomeController(BaseController):
+    def index(self):
+        # Lógica del controlador
+        context = {
+            "title": "Home Page",
+            "header": "Welcome to the Home Page",
+            "content": "This is the content of the home page."
+        }
+        return self.view("home", context)
+
 ```
 
 ### 3. Crear Modelos
@@ -71,9 +95,13 @@ Ejemplo:
 </head>
 <body>
     <h1>Bienvenido a la página principal</h1>
+    <h2> {{ VALUE }}
 </body>
 </html>
 ```
+
+{{ VALUE }} Reemplaza el valor por el valor definido en el contexto
+{{ !VALUE }} Reemplazo sin escapado de caracteres
 
 ### 5. Ejecutar la Aplicación
 Para montar el servidor y ejecutar la aplicación, utiliza el siguiente comando estando dentro de la carpeta del proyecto src/:
