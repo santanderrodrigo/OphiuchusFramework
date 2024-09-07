@@ -6,6 +6,10 @@ Este es un framework personalizado para construir aplicaciones web en Python. A 
 
 - `src/`
   - `app.py`: Archivo principal para ejecutar la aplicación.
+  - `assets/`
+    - `img/`
+    - `css/`
+    - `js/`
   - `core/`
     - `router.py`: Manejador de rutas y servidor HTTP.
   - `routes/`
@@ -44,6 +48,20 @@ class HomeController(BaseController):
     def index(self):
         return self.view("home")
 ```
+Ejemplo con retorno de vista con contexto:
+```python
+# controllers/HomeController.py
+class HomeController(BaseController):
+    def index(self):
+        # Lógica del controlador
+        context = {
+            "title": "Home Page",
+            "header": "Welcome to the Home Page",
+            "content": "This is the content of the home page."
+        }
+        return self.view("home", context)
+
+```
 
 ### 3. Crear Modelos
 Los modelos se ubican en el directorio models/. Aquí es donde se definen las estructuras de datos y las interacciones con la base de datos.
@@ -71,11 +89,33 @@ Ejemplo:
 </head>
 <body>
     <h1>Bienvenido a la página principal</h1>
+    <h2> {{ VALUE }}
 </body>
 </html>
 ```
 
-### 5. Ejecutar la Aplicación
+{{ VALUE }} Reemplaza el valor por el valor definido en el contexto
+{{ !VALUE }} Reemplazo sin escapado de caracteres
+
+### 5. Crear rutas
+Las rutas se definen en routes/routes.py 
+
+# Registra rutas con el controlador y acción correspondientes
+
+register_route_with_injector(METODO, PATH, CONTROLLER NAME, CONTROLER FUNCTION,  [LISTA DE MIDDLEWARES])
+los middlewares deberán pasarse como nombre de da la clase
+
+```python
+    register_route_with_injector('GET', '/', 'HomeController', 'index')
+    register_route_with_injector('GET', '/dashboard', 'DashboardController', 'show_dashboard', [AuthMiddleware])
+    register_route_with_injector('GET', '/login', 'LoginController', 'show')
+    register_route_with_injector('POST', '/login', 'LoginController', 'login')
+    register_route_with_injector('GET', '/logout', 'LoginController', 'logout')
+    register_route_with_injector('GET', '/about', 'HomeController', 'about')
+```
+
+
+### 6. Ejecutar la Aplicación
 Para montar el servidor y ejecutar la aplicación, utiliza el siguiente comando estando dentro de la carpeta del proyecto src/:
 
 ```python
