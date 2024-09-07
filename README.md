@@ -29,12 +29,12 @@ Los middlewares deberán pasarse como nombre de da la clase
 
 Ejemplo:
 ```python
-    register_route_with_injector('GET', '/', 'HomeController', 'index')
-    register_route_with_injector('GET', '/dashboard', 'DashboardController', 'show_dashboard', [AuthMiddleware])
-    register_route_with_injector('GET', '/login', 'LoginController', 'show')
-    register_route_with_injector('POST', '/login', 'LoginController', 'login')
-    register_route_with_injector('GET', '/logout', 'LoginController', 'logout')
-    register_route_with_injector('GET', '/about', 'HomeController', 'about')
+    add_route('GET', '/', 'HomeController', 'index')
+    add_route('GET', '/dashboard', 'DashboardController', 'show_dashboard', [AuthMiddleware])
+    add_route('GET', '/login', 'LoginController', 'show')
+    add_route('POST', '/login', 'LoginController', 'login')
+    add_route('GET', '/logout', 'LoginController', 'logout')
+    add_route('GET', '/about', 'HomeController', 'about')
 ```
 
 ### 2. Crear Controladores
