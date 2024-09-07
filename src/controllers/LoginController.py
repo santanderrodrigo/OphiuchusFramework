@@ -50,4 +50,4 @@ class LoginController(BaseController):
         if session_id:
             self._session_service.destroy_session(session_id)
             self.send_cookies.append(('session_id', 'deleted; HttpOnly; Path=/'))
-        return self.redirect('/login',)
+        return self.redirect('/login')
