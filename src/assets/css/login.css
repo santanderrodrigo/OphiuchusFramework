@@ -63,3 +63,9 @@ h2 {
     color: red;
     margin-top: 10px;
 }
+
+footer {
+    margin-top: 20px;
+    text-align: center;
+    color: #666;
+}

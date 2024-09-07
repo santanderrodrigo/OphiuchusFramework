@@ -22,8 +22,8 @@ class MiddlewareBase(MiddlewareInterface):
     def process_response(self, handler, response):
         return response
 
-    # Métodos para redirigir a una ruta nueva
-    def redirect(self, url, status=302):
-        print(f'Redirecting to {url}')
-        response = Response('', status, 'text/html', {'Location': url})
+    def redirect(self, url):
+        response = Response(None)
+        response.status = 302
+        response.set_header('Location', url)
         return response

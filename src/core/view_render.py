@@ -11,7 +11,7 @@ class View:
         template_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'views', self.view_name + '.html')
         print (template_path)
         try:
-            with open(template_path, 'r') as file:
+            with open(template_path, 'r', encoding='utf-8') as file:
                 template = file.read()
             # Reemplazamos los espacios reservados en la plantilla con los valores del contexto
             for key, value in self.context.items():
