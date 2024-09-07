@@ -66,7 +66,15 @@ class HomeController(BaseController):
             "content": "This is the content of the home page."
         }
         return self.view("home", context)
+```
 
+Ejemplo con retorno de redireccion:
+```python
+# controllers/HomeController.py
+class HomeController(BaseController):
+    def index(self):
+        # Lógica del controlador
+        return self.redirect('/login')
 ```
 
 ### 3. Crear Modelos
