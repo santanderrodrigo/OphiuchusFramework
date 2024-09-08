@@ -169,3 +169,6 @@ test.db
 *.pem
 *.crt
 *.key
+
+#ignorar archivos de configuracion
+src/core/config.json

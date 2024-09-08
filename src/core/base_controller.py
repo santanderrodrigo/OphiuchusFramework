@@ -2,7 +2,9 @@
 from core.view_render import View
 from core.response import Response
 from abc import ABC, abstractmethod
+from core.session_service import SessionService
 import secrets
+
 
 class BaseControllerInterface(ABC):
     @abstractmethod
@@ -39,18 +41,23 @@ class BaseController(BaseControllerInterface):
         self.view = View  # Definir View como un atributo de instancia
         self.send_headers = []  # Almacenar las cabeceras que se deben enviar
         self.send_cookies = []  # Almacenar las cookies que se deben enviar
-        self.dependency_injector = dependency_injector
+        self.dependency_injector = dependency_injector # Guardar el inyector de dependencias
+        self.session_service = dependency_injector.resolve('SessionService')
 
 
     def get_csrf_token(self):
-        # Intenta obtener el token CSRF de las cookies
-        csrf_token =  self.handler.cookies.get('csrf_token')
+        # Obtener el session_id de las cookies
+        session_id = self.handler.cookies.get('session_id')
+        # Intenta obtener el token CSRF de la sesión
+        csrf_token = self.session_service.get_csrf_token(session_id)
         if not csrf_token:
             # Si no se encuentra el token, genera uno nuevo
-            csrf_token = secrets.token_urlsafe(32)
+            csrf_token = self.session_service.generate_csrf_token()
+            self.session_service.store_csrf_token(session_id, csrf_token)
             self.send_cookies.append(('csrf_token', f'{csrf_token}; HttpOnly; Path=/'))
             print("No CSRF token found, generating a new one")
         return csrf_token
+
 
     def response(self, content, status=200, content_type='text/html'):
         response = Response(content, status, content_type)

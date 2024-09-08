@@ -20,9 +20,13 @@ global_api_middlewares = []
 
 # Crear una instancia del inyector de dependencias
 injector = DependencyInjector()
+# Instanciar el servicio de sesión
+session_service = SessionService()
+# Registrar el servicio de sesión en el inyector de dependencias
+injector.register('SessionService', session_service)
+
 # Crear una instancia de la fábrica de middlewares
 middleware_factory = MiddlewareFactory(injector)
-
 # Instanciar el CSRFMiddleware usando la fábrica
 csrf_middleware = middleware_factory.create(CSRFMiddleware)
 # Registrar el CSRFMiddleware como un middleware global
@@ -31,11 +35,6 @@ global_middlewares.append(csrf_middleware)
 cors_middleware = middleware_factory.create(CorsMiddleware)
 # Registrar el CorsMiddleware como un middleware global
 global_middlewares.append(cors_middleware)
-
-# Instanciar el servicio de sesión
-session_service = SessionService()
-# Registrar el servicio de sesión en el inyector de dependencias
-injector.register('SessionService', session_service)
 
 # Crear la función de registro de rutas con el inyector de dependencias
 register_route_with_injector = create_route_registrar(injector)
@@ -60,7 +59,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.handle_request('POST')
 
     def handle_request(self, method):
-        try:
+        #try:
             ##obtenemos los headers de la petición
             for header, value in self.headers.items():
                 self.headers[header] = value
@@ -72,8 +71,8 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self.serve_static_file()
             else:
                 self.handle_dynamic_request(method)
-        except Exception as e:
-            self.send_error(500, f'Internal server error: {str(e)}')
+        #except Exception as e:
+        #    self.send_error(500, f'Internal server error: {str(e)}')
 
     def serve_static_file(self):
         file_path = self.path.lstrip('/')
