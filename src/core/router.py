@@ -1,8 +1,10 @@
+#router.py
 import os 
 from urllib.parse import parse_qs
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from core.routes import routes as routes_dict, create_route_registrar
 from http.cookies import SimpleCookie
+import ssl
 from middlewares.csrf_middleware import CSRFMiddleware
 from core.response import Response
 from core.middleware_base import MiddlewareInterface
@@ -41,6 +43,16 @@ register_route_with_injector = create_route_registrar(injector)
 routes_config.register_routes(injector)
 
 class RequestHandler(BaseHTTPRequestHandler):
+    def __init__(self, *args,is_https=False, **kwargs):
+        self.is_https = is_https
+        super().__init__(*args, **kwargs)
+        self.path_params = {}
+        self.query_params = {}
+        self.post_params = {}
+        self.cookies = {}
+        self.method = ''
+        self.headers = {}
+
     def do_GET(self):
         self.handle_request('GET')
 
@@ -210,8 +222,33 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.send_header('X-Frame-Options', 'DENY')
         self.send_header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
 
-def run(server_class=HTTPServer, handler_class=RequestHandler, port=8080):
+def run_http(server_class=HTTPServer, handler_class=RequestHandler, port=8080):
     server_address = ('', port)
-    httpd = server_class(server_address, handler_class)
-    print(f'Starting server on port {port}...')
+    httpd = server_class(server_address, lambda *args, **kwargs: handler_class(*args, is_https=False, **kwargs))
+    print(f'Starting HTTP server on port {port}...')
     httpd.serve_forever()
+
+def run_https(server_class=HTTPServer, handler_class=RequestHandler, port=443):
+    server_address = ('', port)
+    httpd = server_class(server_address, lambda *args, **kwargs: handler_class(*args, is_https=True, **kwargs))
+
+    # Create an SSL context
+    context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+    context.load_cert_chain(certfile='cert.pem', keyfile='key.pem')
+
+    # Wrap the server socket with SSL
+    httpd.socket = context.wrap_socket(httpd.socket, server_side=True)
+
+    print(f'Starting HTTPS server on port {port}...')
+    httpd.serve_forever()
+
+def run_both(http_port=8080, https_port=8443):
+    http_thread = threading.Thread(target=run_http, args=(HTTPServer, RequestHandler, http_port))
+    https_thread = threading.Thread(target=run_https, args=(HTTPServer, RequestHandler, https_port))
+
+    http_thread.start()
+    https_thread.start()
+
+    http_thread.join()
+    https_thread.join()
+
