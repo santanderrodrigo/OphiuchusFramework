@@ -123,7 +123,7 @@ Para correr el servidor en https
 python app.py run --https
 ```
 
-Todos los parámetros de configuración del servidor están en el archivo .env, se deberán generar las claves ssl para poder ejecutar el servidor HTTPS, si las claves no existen se generará un certificado autofirmado para probar en el entorno local, requiere pyOpenSSL 24.2.1 isntaldo, lo puedes hacer ejecutando `pip install pyOpenSSL`
+Todos los parámetros de configuración del servidor están en el archivo .env, se deberán generar las claves ssl para poder ejecutar el servidor HTTPS, si las claves no existen se generará un certificado autofirmado para probar en el entorno local, requiere pyOpenSSL 24.2.1 instalado, lo puedes hacer ejecutando `pip install pyOpenSSL`
 
 Esto iniciará el servidor en el puerto 8080. Puedes acceder a la aplicación en tu navegador web en http://localhost:8080.
 
