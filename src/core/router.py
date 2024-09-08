@@ -222,13 +222,14 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.send_header('X-Frame-Options', 'DENY')
         self.send_header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
 
-def run_http(server_class=HTTPServer, handler_class=RequestHandler, port=8080):
+def run_http(server_class=HTTPServer, handler_class=RequestHandler, port=8080, host='0.0.0.0'):
     server_address = ('', port)
     httpd = server_class(server_address, lambda *args, **kwargs: handler_class(*args, is_https=False, **kwargs))
     print(f'Starting HTTP server on port {port}...')
+    print('Press Ctrl+C to stop the server')
     httpd.serve_forever()
 
-def run_https(server_class=HTTPServer, handler_class=RequestHandler, port=443):
+def run_https(server_class=HTTPServer, handler_class=RequestHandler, port=443,  host='0.0.0.0'):
     server_address = ('', port)
     httpd = server_class(server_address, lambda *args, **kwargs: handler_class(*args, is_https=True, **kwargs))
 
@@ -240,11 +241,12 @@ def run_https(server_class=HTTPServer, handler_class=RequestHandler, port=443):
     httpd.socket = context.wrap_socket(httpd.socket, server_side=True)
 
     print(f'Starting HTTPS server on port {port}...')
+    print('Press Ctrl+C to stop the server')
     httpd.serve_forever()
 
-def run_both(http_port=8080, https_port=8443):
-    http_thread = threading.Thread(target=run_http, args=(HTTPServer, RequestHandler, http_port))
-    https_thread = threading.Thread(target=run_https, args=(HTTPServer, RequestHandler, https_port))
+def run_both(http_port=8080, https_port=8443,  host='0.0.0.0'):
+    http_thread = threading.Thread(target=run_http, args=(HTTPServer, RequestHandler, http_port, host))
+    https_thread = threading.Thread(target=run_https, args=(HTTPServer, RequestHandler, https_port, host))
 
     http_thread.start()
     https_thread.start()

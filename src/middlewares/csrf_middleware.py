@@ -8,12 +8,9 @@ from core.middleware_base import MiddlewareBase
 class CSRFMiddleware(MiddlewareBase):
     def process_request(self, handler):
         # Verificar el token CSRF en solicitudes POST
-        print("CSRFMiddleware:process_request")
         if handler.command == 'POST':
             print("Handling POST request")
             csrf_token = handler.post_params.get('csrf_token', [None])[0]
-            print(f"Received CSRF token: {csrf_token}")
-
             if not csrf_token or not self._is_valid_token(handler, csrf_token):
                 print("Invalid CSRF token")
                 return Response('CSRF token is invalid', 403)

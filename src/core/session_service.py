@@ -2,6 +2,9 @@ import uuid
 from http.cookies import SimpleCookie
 from datetime import datetime, timedelta
 
+#session stored in memory, restart server will lose all sessions
+#TODO: store sessions in a database or fileSystem
+
 class SessionService:
     def __init__(self, session_expiry=timedelta(hours=1)):
         self.sessions = {}
@@ -52,3 +55,37 @@ class SessionService:
 
     def delete_session_cookie(self, response):
         response.set_header('Set-Cookie', 'session_id=deleted; HttpOnly; Path=/; Max-Age=0')
+
+    def hash_password(self, password):
+        # Generamos uan sal segura
+        salt = os.urandom(16)
+        
+        # Creamos un hash de la contraseña con el salado
+        hash_obj = hashlib.pbkdf2_hmac(
+            'sha256',  # Algoritmo de hash
+            password.encode('utf-8'),  # Convertimos la contraseña a bytes
+            salt,
+            100000  #Número de iteraciones
+        )
+        
+        # Devolvemos el salt y el hash concatenados
+        return salt + hash_obj
+
+    def verify_password(self, stored_password, provided_password):
+        # Extraer el salt del stored_password
+        salt = stored_password[:16]
+        
+        # Extraer el hash del stored_password
+        stored_hash = stored_password[16:]
+        
+        # CreaMOS un hash del provided_password con el mismo salt
+        hash_obj = hashlib.pbkdf2_hmac(
+            'sha256',  # Algoritmo de hash
+            provided_password.encode('utf-8'),  # Convertimos la contraseña a bytes
+            salt,  # Salt
+            100000  # Número de iteraciones
+        )
+        
+        # Comparaamos el hash almacenado con el hash del provided_password y retornamos el resultado
+        return stored_hash == hash_obj
+        

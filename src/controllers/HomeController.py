@@ -9,8 +9,6 @@ class HomeController(BaseController):
         super().__init__(handler, dependency_injector)
         # Obtenemos el service de la session
         self._session_service = dependency_injector.resolve('SessionService')
-        
-        
 
     def index(self):
         # Lógica del controlador

@@ -10,6 +10,11 @@ class LoginController(BaseController):
         user = self.post_params.get('username', [None])[0]
         password = self.post_params.get('password', [None])[0]
 
+        #obtenemos el hash de la contraseña
+        #hashed_password = self._session_service.hash_password(password)
+        #verificamos la contraseña en base al hash guardado
+        #is_correct_password = self._session_service.verify_password(stored_password, password)
+
         if user == 'admin' and password == 'admin':
             session_id = self._session_service.create_session(user)
             response = self.redirect('/dashboard')
@@ -34,3 +39,21 @@ class LoginController(BaseController):
             response = self.redirect('/login')
             self._session_service.delete_session_cookie(response)
             return response
+
+    def show_register(self):
+        return self.view('register', {'csrf_token': self.get_csrf_token()})
+
+    def register(self):
+        username = self.post_params.get('username', [None])[0]
+        password = self.post_params.get('password', [None])[0]
+        confirm_password = self.post_params.get('confirm_password', [None])[0]
+
+        if password != confirm_password:
+            context = {'error': 'Las contraseñas no coinciden', 'csrf_token': self.get_csrf_token()}
+            return self.view('register', context)
+
+        #hacemos un hash de la contraseña con salt, ya qiue no se puede guardar la contraseña en texto plano
+        hashed_password = self._session_service.hash_password(password)
+
+        # Aquí se debería guardar el usuario en la base de datos
+        return self.redirect('/login')
