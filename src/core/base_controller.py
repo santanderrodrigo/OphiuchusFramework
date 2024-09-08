@@ -14,6 +14,10 @@ class BaseControllerInterface(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def json_response(self, content, status=200):
+        raise NotImplementedError
+
+    @abstractmethod
     def not_found(self):
         raise NotImplementedError
     
@@ -30,7 +34,8 @@ class BaseController(BaseControllerInterface):
         self.handler = handler
         self.cookies = handler.cookies  # Acceso a las cookies
         self.query_params = handler.query_params  # Acceso a los parámetros de la URL
-        self.post_params = handler.post_params
+        self.post_params = handler.post_params # Acceso a los parámetros del cuerpo de la petición
+        self.path_params = handler.path_params # Acceso a los parámetros de la ruta
         self.view = View  # Definir View como un atributo de instancia
         self.send_headers = []  # Almacenar las cabeceras que se deben enviar
         self.send_cookies = []  # Almacenar las cookies que se deben enviar
@@ -49,6 +54,15 @@ class BaseController(BaseControllerInterface):
 
     def response(self, content, status=200, content_type='text/html'):
         response = Response(content, status, content_type)
+        # Agregar las cabeceras y cookies que se deben enviar
+        for header, value in self.send_headers:
+            response.set_header(header, value)
+        for cookie in self.send_cookies:
+            response.set_cookie(cookie[0], cookie[1])
+        return response
+
+    def json_response(self, data, status=200):
+        response = Response.json(data, status)
         # Agregar las cabeceras y cookies que se deben enviar
         for header, value in self.send_headers:
             response.set_header(header, value)

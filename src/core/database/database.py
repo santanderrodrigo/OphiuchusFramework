@@ -1,10 +1,11 @@
 import sqlite3
 import os
 
-DATABASE_URL = os.getenv('DATABASE_URL', 'test.db')
-DATABASE_USER = os.getenv('DATABASE_USER', 'test')
-DATABASE_PASSWORD = os.getenv('DATABASE_PASSWORD', 'test')
-DATABASE_PASSWORD = os.getenv('DATABASE_PASSWORD', 'test')
+DATABASE_URL = os.getenv('DB_HOST', 'test.db')
+DATABASE_PORT = os.getenv('DB_PORT', '3306')
+DATABASE_USER = os.getenv('DB_USER', 'test')
+DATABASE_PASSWORD = os.getenv('DB_PASSWORD', 'test')
+DATABASE_NAME = os.getenv('DB_NAME', 'test')
 
 def get_connection():
     conn = sqlite3.connect(DATABASE_URL)

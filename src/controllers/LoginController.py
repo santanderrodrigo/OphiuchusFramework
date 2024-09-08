@@ -1,3 +1,4 @@
+#login_controller.py
 from core.base_controller import BaseController
 
 class LoginController(BaseController):
@@ -19,7 +20,7 @@ class LoginController(BaseController):
 
             # Crear una nueva sesión
             session_id = self._session_service.create_session(user)
-            self.send_cookies.append(('session_id', f'{session_id}; HttpOnly; Path=/'))
+            self.send_cookies.append(('session_id', f'{session_id}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=3600'))
 
             # Redirigimos al home
             return self.redirect('/dashboard')
@@ -49,5 +50,5 @@ class LoginController(BaseController):
         session_id = self.handler.cookies.get('session_id')
         if session_id:
             self._session_service.destroy_session(session_id)
-            self.send_cookies.append(('session_id', 'deleted; HttpOnly; Path=/'))
+            self.send_cookies.append(('session_id', 'deleted; HttpOnly; Path=/; Max-Age=0'))
         return self.redirect('/login')

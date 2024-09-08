@@ -21,9 +21,7 @@ class AuthMiddleware(MiddlewareBase):
             else:
                 handler.user_id = None
 
-            # Si no hay un user_id válido, retornar una respuesta de "Prohibido"
             if handler.user_id is None:
-                # Redirigimos a login
                 return self.redirect('/login')
         except Exception as e:
             return self.redirect('/login')
@@ -32,7 +30,7 @@ class AuthMiddleware(MiddlewareBase):
         try:
             if not handler.cookies.get('session_id'):
                 session_id = self.session_service.create_session(handler.user_id)
-                response.set_header('Set-Cookie', f'session_id={session_id}; HttpOnly; Secure; SameSite=Strict; Path=/')
+                response.set_header('Set-Cookie', f'session_id={session_id}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=3600')
             return response
         except Exception as e:
             return response

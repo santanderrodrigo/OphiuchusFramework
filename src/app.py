@@ -1,5 +1,7 @@
 # app.py
 import sys
+from core.utils import load_env_file
+load_env_file() # cargamnos la configuración de .env antes de importar run
 from core.router import run
 from core.updater.updater import Updater
 

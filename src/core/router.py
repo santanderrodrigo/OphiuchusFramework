@@ -1,19 +1,20 @@
-import os
+import os 
 from urllib.parse import parse_qs
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from core.routes import routes as routes_dict, create_route_registrar
 from http.cookies import SimpleCookie
-from core.utils import load_env_file
 from middlewares.csrf_middleware import CSRFMiddleware
 from core.response import Response
 from core.middleware_base import MiddlewareInterface
+from middlewares.cors_middleware import CorsMiddleware
 from core.dependency_injector import DependencyInjector
 from core.middleware_factory import MiddlewareFactory
 from core.session_service import SessionService
 import routes.routes as routes_config
 
-load_env_file('.env')
+
 global_middlewares = []
+global_api_middlewares = []
 
 # Crear una instancia del inyector de dependencias
 injector = DependencyInjector()
@@ -24,6 +25,10 @@ middleware_factory = MiddlewareFactory(injector)
 csrf_middleware = middleware_factory.create(CSRFMiddleware)
 # Registrar el CSRFMiddleware como un middleware global
 global_middlewares.append(csrf_middleware)
+#instanciar el CorsMiddleware usando la fábrica
+cors_middleware = middleware_factory.create(CorsMiddleware)
+# Registrar el CorsMiddleware como un middleware global
+global_middlewares.append(cors_middleware)
 
 # Instanciar el servicio de sesión
 session_service = SessionService()
@@ -35,8 +40,6 @@ register_route_with_injector = create_route_registrar(injector)
 # Pasar el inyector de dependencias a la configuración de rutas
 routes_config.register_routes(injector)
 
-print(f"SessionService registered: {injector.resolve('SessionService')}")
-
 class RequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.handle_request('GET')
@@ -46,6 +49,13 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     def handle_request(self, method):
         try:
+            ##obtenemos los headers de la petición
+            for header, value in self.headers.items():
+                self.headers[header] = value
+            
+            #obtenemos el method de la petición
+            self.method = method
+
             if self.path.startswith('/assets/'):
                 self.serve_static_file()
             else:
@@ -87,50 +97,63 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.parse_query_string()
         self.post_params = self.get_request_data()
 
-        if method in routes_dict and self.path in routes_dict[method]:
-            route_info = routes_dict[method][self.path]
+        for regex_path, route_info in routes_dict.get(method, {}).items():
+            match = regex_path.match(self.path)
+            if match:
+                self.path_params = match.groupdict()
 
-            # Ejecuta los middlewares globales
-            middleware_response = self.execute_middlewares(global_middlewares, 'request')
-            if middleware_response:
-                self._send_response(middleware_response)
+                # Determine if the route is an API route
+                is_api_route = self.path.startswith('/api/')
+
+                # Select the appropriate global middlewares
+                selected_global_middlewares = global_api_middlewares if is_api_route else global_middlewares
+
+                # Execute the selected global middlewares
+                middleware_response = self.execute_middlewares(selected_global_middlewares, 'request')
+                if middleware_response:
+                    self._send_response(middleware_response)
+                    return
+
+                # Execute the route-specific middlewares
+                middleware_response = self.execute_middlewares(route_info['middlewares'], 'request')
+                if middleware_response:
+                    self._send_response(middleware_response)
+                    return
+
+                # Instantiate the controller with the request and data
+                controller_class = route_info['controller']
+                controller_instance = controller_class(self, dependency_injector=injector)
+
+                # Invoke the controller function with path parameters
+                controller_function = getattr(controller_instance, route_info['action'])
+                response = controller_function(**self.path_params)
+
+                # If the controller does not return a Response instance, create one
+                if not isinstance(response, Response):
+                    response_content = response
+                    if hasattr(response_content, 'render'):
+                        response_content = response_content.render()
+                    response = Response(response_content)
+
+                # Execute the route-specific response middlewares
+                response = self.execute_middlewares(route_info['middlewares'], 'response', response)
+
+                # Execute the selected global response middlewares
+                response = self.execute_middlewares(selected_global_middlewares, 'response', response)
+
+                self._send_response(response)
                 return
 
-            # Ejecuta los middlewares de la ruta
-            middleware_response = self.execute_middlewares(route_info['middlewares'], 'request')
-            if middleware_response:
-                self._send_response(middleware_response)
-                return
-
-            # Instanciar el controlador con el request y los datos
-            controller_class = route_info['controller']
-            controller_instance = controller_class(self, dependency_injector=injector)
-
-            # Invocar la función del controlador
-            controller_function = getattr(controller_instance, route_info['action'])
-            response = controller_function()
-
-            # Si el controlador no devuelve una instancia de Response, crear una
-            if not isinstance(response, Response):
-                response_content = response
-                if hasattr(response_content, 'render'):
-                    response_content = response_content.render()
-                response = Response(response_content)
-
-            # Ejecuta los middlewares de la respuesta
-            response = self.execute_middlewares(route_info['middlewares'], 'response', response)
-
-            # Ejecuta los middlewares globales de la respuesta
-            response = self.execute_middlewares(global_middlewares, 'response', response)
-
-            self._send_response(response)
+        # Si la ruta no se encuentra en las rutas definidas
+        # Verificar si la ruta existe para otros métodos
+        allowed_methods = [m for m in routes_dict if self.path in routes_dict[m]]
+        if allowed_methods:
+            self.send_error(405, 'Method Not Allowed')
         else:
-            # Verificar si la ruta existe para otros métodos
-            allowed_methods = [m for m in routes_dict if self.path in routes_dict[m]]
-            if allowed_methods:
-                self.send_error(405, 'Method Not Allowed')
-            else:
-                self.send_error(404, 'Page not found')
+            self.send_error(404, 'Page not found')
+
+
+
 
     def get_request_data(self):
         content_length = int(self.headers.get('Content-Length', 0))
@@ -176,6 +199,10 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         if response.content:
             self.wfile.write(response.content.encode())
+
+    def set_header(self, header, value):
+        #los cargamos en el self.headers
+        self.headers[header] = value
 
     def send_security_headers(self):
         self.send_header('Content-Security-Policy', "default-src 'self'")
