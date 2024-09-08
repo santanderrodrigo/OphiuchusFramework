@@ -241,7 +241,21 @@ def run_https(server_class=HTTPServer, handler_class=RequestHandler, port=443,  
 
     print(f'Starting HTTPS server on port {port}...')
     print('Press Ctrl+C to stop the server')
-    httpd.serve_forever()
+    retries = 0
+    max_retries = 3
+    while retries < max_retries:
+        try:
+            httpd.serve_forever()
+        except ssl.SSLError as e:
+            print(f"SSL error: {e}")
+            retries += 1
+            print(f"Retrying in {retry_delay} seconds... ({retries}/{max_retries})")
+            time.sleep(retry_delay)
+        except Exception as e:
+            print(f"General error: {e}")
+            break
+        else:
+            break
 
 def run_both(http_port=8080, https_port=8443,  host='0.0.0.0'):
     http_thread = threading.Thread(target=run_http, args=(HTTPServer, RequestHandler, http_port, host))

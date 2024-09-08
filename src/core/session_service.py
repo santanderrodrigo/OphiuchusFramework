@@ -164,6 +164,7 @@ class SessionService:
         self.sessions[session_id]['csrf_token'] = csrf_token
 
     def get_csrf_token(self, session_id):
+        print("Getting CSRF token for session:", session_id)
         # Obtener el token CSRF almacenado en la sesión
         return self.sessions.get(session_id, {}).get('csrf_token')
 
