@@ -147,12 +147,15 @@ class SessionService:
         self.storage.delete_session(session_id)
 
     def clean_expired_sessions(self):
-        all_sessions = self.load_all_sessions()
-        for session_id, session_data in all_sessions.items():
-            if 'expiry_date' in session_data:
-                expiry_date = datetime.fromisoformat(session_data['expiry_date']) 
-                if datetime.utcnow() >= expiry_date:
-                    self.delete_session(session_id)
+        try:
+            all_sessions = self.load_all_sessions()
+            for session_id, session_data in all_sessions.items():
+                if 'expiry_date' in session_data:
+                    expiry_date = datetime.fromisoformat(session_data['expiry_date'])
+                    if datetime.utcnow() >= expiry_date:
+                        self.delete_session(session_id)
+        except Exception as e:
+            print(f"Error cleaning expired sessions: {e}")
 
     def has_session(self, session_id):
         session_data = self.load_session(session_id)
