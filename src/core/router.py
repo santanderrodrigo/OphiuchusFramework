@@ -162,7 +162,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                         #pass                        
                     else:
                         session_id = response.get_cookie('session_id')
-                        if session_id:
+                        if session_id and session_service.has_session(session_id.value):
                             print("Session exists in response")
                             session_id = session_id.value
                         else:

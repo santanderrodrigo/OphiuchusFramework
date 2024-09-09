@@ -48,15 +48,13 @@ class BaseController(BaseControllerInterface):
     def get_csrf_token(self):
         # Obtener el session_id de las cookies
         session_id = self.handler.cookies.get('session_id')
+
+        print(f"BASE Session ID: {session_id}")
         
         # Intenta obtener el token CSRF de la sesión
         csrf_token = self.session_service.get_csrf_token(session_id)
         
         if not csrf_token:
-            # Si no se encuentra el token, genera uno nuevo
-            csrf_token = self.session_service.generate_csrf_token()
-            self.session_service.store_csrf_token(session_id, csrf_token)
-            
             print("No CSRF token found, generating a new one")
         
         return csrf_token

@@ -86,7 +86,7 @@ class SessionService:
         )
         return stored_hash == hash_obj
 
-    def generate_csrf_token(self):
+    def _generate_csrf_token(self):
         return secrets.token_urlsafe(32)
 
     def store_csrf_token(self, session_id, csrf_token):
@@ -99,7 +99,13 @@ class SessionService:
     def get_csrf_token(self, session_id):
         print("Getting CSRF token for session:", session_id)
         session_data = self.storage.load_session(session_id)
-        return session_data.get('csrf_token') if session_data else None
+        if session_data and 'csrf_token' in session_data:
+            return session_data['csrf_token']
+        else:
+            #egenramos un nuevo token
+            csrf_token = self._generate_csrf_token()
+            self.store_csrf_token(session_id, csrf_token)
+            return csrf_token
 
     def is_valid_csrf_token(self, session_id, token):
         stored_token = self.get_csrf_token(session_id)
@@ -111,10 +117,13 @@ class SessionService:
         expiry_date = datetime.utcnow() + self.session_expiry
         session_data = {'expiry_date': expiry_date.isoformat()}
         #create csrf token
-        csrf_token = self.generate_csrf_token()
+        csrf_token = self._generate_csrf_token()
         session_data['csrf_token'] = csrf_token
         self.storage.save_session(session_id, session_data)
         return session_id
+
+    def load_all_sessions(self):
+        return self.storage.load_all_sessions()
 
     def load_session(self, session_id):
         session_data = self.storage.load_session(session_id)
@@ -138,7 +147,7 @@ class SessionService:
         self.storage.delete_session(session_id)
 
     def clean_expired_sessions(self):
-        all_sessions = self.storage.load_all_sessions()
+        all_sessions = self.load_all_sessions()
         for session_id, session_data in all_sessions.items():
             if 'expiry_date' in session_data:
                 expiry_date = datetime.fromisoformat(session_data['expiry_date']) 
@@ -147,7 +156,9 @@ class SessionService:
 
     def has_session(self, session_id):
         session_data = self.load_session(session_id)
-        return session_data is not None
+        if session_data:
+            return True
+        return False
 
     def is_logged(self, session_id):
         session_data = self.load_session(session_id)

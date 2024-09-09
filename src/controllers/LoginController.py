@@ -33,11 +33,16 @@ class LoginController(BaseController):
         return self.view('login', context)
     
     def logout(self):
-        session_id = self.handler.cookies.get('session_id')
+        session_id = self.cookies.get('session_id')
         if session_id:
-            self._session_service.delete_session(session_id)
+            session_id = session_id  # Asegurarse de que session_id sea una cadena de texto
+            self.session_service.delete_session(session_id)
+            new_session_id = self.session_service.create_session()
             response = self.redirect('/')
-            response.delete_cookie('session_id')
+            response.set_cookie('session_id', new_session_id)
+            return response
+        else:
+            response = self.response("No active session found")
             return response
 
     def show_register(self):
