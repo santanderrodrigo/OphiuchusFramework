@@ -1,4 +1,4 @@
-# Framework para la materia de Proyecto Informático
+# OphiuchusFramework
 
 Este es un framework personalizado para construir aplicaciones web en Python. A continuación, se detallan las instrucciones para usar el framework, ejecutar la aplicación y organizar el proyecto.
 
