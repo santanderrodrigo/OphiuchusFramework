@@ -152,6 +152,24 @@ class RequestHandler(BaseHTTPRequestHandler):
                 # Execute the selected global response middlewares
                 response = self.execute_middlewares(selected_global_middlewares, 'response', response)
 
+                # Si no es una solicitud API, gestionar la sesión
+                if not is_api_route:
+                    session_id = self.cookies.get('session_id')
+                    print("cookie session_id", session_id)
+                    # Intentar cargar la sesión actual si existe
+                    if session_id and session_service.has_session(session_id):
+                        print("Session exists")
+                        #pass                        
+                    else:
+                        if self._read_response_cookies(response, 'session_id'):
+                            print("Session exists in response")
+                            session_id = self._read_response_cookies(response, 'session_id')
+                        else:
+                            print("Session does not exist, creating new session")
+                            # Crear una nueva sesión ya que no existe
+                            session_id = session_service.create_session()
+                            session_service.set_session_cookie(response, session_id, self.is_https)
+                        
                 self._send_response(response)
                 return
 
@@ -201,6 +219,15 @@ class RequestHandler(BaseHTTPRequestHandler):
         if '?' in self.path:
             self.path, query_string = self.path.split('?')
             self.query_params = parse_qs(query_string)
+
+    def _read_response_cookies(self, response, cookie_name):
+        print("cookie", response.headers)
+        if 'Set-Cookie' in response.headers:
+            cookie = SimpleCookie(response.headers['Set-Cookie'])
+            if cookie_name in cookie:
+                return cookie[cookie_name].value
+            
+        return None
 
     def _send_response(self, response):
         self.send_response(response.status)

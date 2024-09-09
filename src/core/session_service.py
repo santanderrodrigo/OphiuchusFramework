@@ -7,17 +7,16 @@ import secrets
 import timeit
 import os
 import json
-
-#session stored in memory, restart server will lose all sessions
-#TODO: store sessions in a database or fileSystem
+from core.session_storage import FileSessionStorage
 
 class SessionService:
     CONFIG_FILE = 'core/config.json'
 
-    def __init__(self, session_expiry=timedelta(hours=1)):
-        self.sessions = {}
+    def __init__(self, session_expiry=timedelta(hours=1), storage_driver=None):
         self.session_expiry = session_expiry
         self.optimal_iterations = self._load_or_find_optimal_iterations("example_password")
+        self.storage = storage_driver if storage_driver else FileSessionStorage()
+        self.clean_expired_sessions()
 
     def _load_config(self):
         if os.path.exists(self.CONFIG_FILE):
@@ -30,21 +29,16 @@ class SessionService:
             json.dump(config, f, indent=4)
 
     def _load_or_find_optimal_iterations(self, password):
-        # Intentar cargar el valor de iteraciones óptimas desde el archivo de configuración
         config = self._load_config()
         if 'hash_optimal_iterations' in config:
             return config['hash_optimal_iterations']
 
-        # Si no se encuentra el valor, calcularlo
         optimal_iterations = self.find_optimal_iterations(password)
-        
-        # Guardar el valor calculado en el archivo de configuración
         config['hash_optimal_iterations'] = optimal_iterations
         self._save_config(config)
         
         return optimal_iterations
 
-    #Medimos el tiempo que tarda en hashear la contraseña
     def find_optimal_iterations(self, password, max_time=0.2):
         min_iterations = 1000
         max_iterations = 1000000
@@ -65,115 +59,135 @@ class SessionService:
         print(f"Optimal iterations found: {optimal_iterations}")
         return optimal_iterations
 
-    def _measure_hash_time(self,password, iterations):
+    def _measure_hash_time(self, password, iterations):
         salt = os.urandom(16)
         start_time = timeit.default_timer()
         hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, iterations)
         end_time = timeit.default_timer()
         return end_time - start_time
 
-    def create_session(self, user_id):
-        session_id = str(uuid.uuid4())
-        expiry_time = datetime.utcnow() + self.session_expiry
-        self.sessions[session_id] = {'user_id': user_id, 'expiry': expiry_time}
-        return session_id
-
-    def get_user_id(self, session_id):
-        session_data = self.sessions.get(session_id)
-        if session_data and 'expiry' in session_data and session_data['expiry'] > datetime.utcnow():
-            return session_data['user_id']
-        self.destroy_session(session_id)
-        return None
-
-    def destroy_session(self, session_id):
-        if session_id in self.sessions:
-            del self.sessions[session_id]
-
-    def is_logged(self, session_id):
-        session_data = self.sessions.get(session_id)
-        return session_data is not None and 'expiry' in session_data and session_data['expiry'] > datetime.utcnow()
-
-    def parse_session_cookie(self, cookie_header):
-        cookie = SimpleCookie(cookie_header)
-        return cookie.get('session_id').value if 'session_id' in cookie else None
-
-    def regenerate_session_id(self, old_session_id):
-        user_id = self.get_user_id(old_session_id)
-        if user_id:
-            self.destroy_session(old_session_id)
-            return self.create_session(user_id)
-        return None
-
-    def set_session_cookie(self, response, session_id, is_https=False):
-        try:
-            secure_attr = 'Secure; ' if is_https else ''
-            cookie_value = (
-                f'session_id={session_id}; HttpOnly; {secure_attr}SameSite=Lax; '
-                f'Path=/; Max-Age={int(self.session_expiry.total_seconds())}'
-            )
-            response.set_header('Set-Cookie', cookie_value)
-        except Exception as e:
-            print(f"Error setting session cookie: {e}")
-
-    def delete_session_cookie(self, response):
-        response.set_header('Set-Cookie', 'session_id=deleted; HttpOnly; Path=/; Max-Age=0')
-
     def hash_password(self, password):
-        # Generamos uan sal segura
         salt = os.urandom(16)
-        
-        # Creamos un hash de la contraseña con el salado
         hash_obj = hashlib.pbkdf2_hmac(
-            'sha256',  # Algoritmo de hash
-            password.encode('utf-8'),  # Convertimos la contraseña a bytes
+            'sha256',
+            password.encode('utf-8'),
             salt,
-            self.optimal_iterations  # Número de iteraciones óptimo
+            self.optimal_iterations
         )
-        
-        # Devolvemos el salt y el hash concatenados
         return salt + hash_obj
 
     def verify_password(self, stored_password, provided_password):
-        # Extraer el salt del stored_password
         salt = stored_password[:16]
-        
-        # Extraer el hash del stored_password
         stored_hash = stored_password[16:]
-        
-        # CreaMOS un hash del provided_password con el mismo salt
         hash_obj = hashlib.pbkdf2_hmac(
-            'sha256',  # Algoritmo de hash
-            provided_password.encode('utf-8'),  # Convertimos la contraseña a bytes
-            salt,  # Salt
-            100000  # Número de iteraciones
+            'sha256',
+            provided_password.encode('utf-8'),
+            salt,
+            self.optimal_iterations
         )
-        
-        # Comparaamos el hash almacenado con el hash del provided_password y retornamos el resultado
         return stored_hash == hash_obj
 
-    # CSRF protection
-
     def generate_csrf_token(self):
-        # Generar un nuevo token CSRF
         return secrets.token_urlsafe(32)
 
     def store_csrf_token(self, session_id, csrf_token):
-        # Almacenar el token CSRF en la sesión
-        if session_id not in self.sessions:
-            self.sessions[session_id] = {}
-        self.sessions[session_id]['csrf_token'] = csrf_token
+        session_data = self.storage.load_session(session_id)
+        if not session_data:
+            session_data = {}
+        session_data['csrf_token'] = csrf_token
+        self.storage.save_session(session_id, session_data)
 
     def get_csrf_token(self, session_id):
         print("Getting CSRF token for session:", session_id)
-        # Obtener el token CSRF almacenado en la sesión
-        return self.sessions.get(session_id, {}).get('csrf_token')
+        session_data = self.storage.load_session(session_id)
+        return session_data.get('csrf_token') if session_data else None
 
     def is_valid_csrf_token(self, session_id, token):
-        # Obtener el token CSRF almacenado en la sesión
         stored_token = self.get_csrf_token(session_id)
-
         print("Stored token:", stored_token, "Received token:", token)
-
-        # Verificar si el token recibido coincide con el almacenado
         return stored_token and hmac.compare_digest(token, stored_token)
-        
+
+    def create_session(self):
+        session_id = str(uuid.uuid4())
+        expiry_date = datetime.utcnow() + self.session_expiry
+        session_data = {'expiry_date': expiry_date.isoformat()}
+        self.storage.save_session(session_id, session_data)
+        return session_id
+
+    def load_session(self, session_id):
+        session_data = self.storage.load_session(session_id)
+        if session_data:
+            if 'expiry_date' in session_data:
+                expiry_date = datetime.fromisoformat(session_data['expiry_date'])
+                if datetime.utcnow() < expiry_date:
+                    return session_data
+                else:
+                    self.delete_session(session_id)
+        return None
+
+    def save_session(self, session_id, session_data):
+        if session_id == "admin":
+            raise Exception("No se puede guardar la sesión del usuario admin", f"session_id: {session_id}, session_data: {session_data}")
+        print("Saving session:", session_id, session_data)
+        session_data['expiry_date'] = (datetime.utcnow() + self.session_expiry).isoformat()
+        self.storage.save_session(session_id, session_data)
+
+    def delete_session(self, session_id):
+        self.storage.delete_session(session_id)
+
+    def clean_expired_sessions(self):
+        all_sessions = self.storage.load_all_sessions()
+        for session_id, session_data in all_sessions.items():
+            if 'expiry_date' in session_data:
+                expiry_date = datetime.fromisoformat(session_data['expiry_date']) 
+                if datetime.utcnow() >= expiry_date:
+                    self.delete_session(session_id)
+
+    def has_session(self, session_id):
+            session_data = self.load_session(session_id)
+            return session_data is not None
+
+    def is_loggued(self, session_id):
+        session_data = self.load_session(session_id)
+        return session_data is not None and 'username' in session_data
+
+    # Crear una nueva sesión
+    def login_user(self, username, actual_session_id):
+        # Regenerar la sesión si el usuario ya tiene una sesión activa
+        if actual_session_id:
+            session_data = self.load_session(actual_session_id)
+            # Generate a new session ID to prevent session fixation
+            new_session_id = str(uuid.uuid4())
+            self.delete_session(actual_session_id)
+        else:
+            session_data = {}
+            new_session_id = str(uuid.uuid4())
+
+        session_data['username'] = username
+        # Agregamos la fecha de creación de la sesión
+        session_data['created_at'] = datetime.utcnow().isoformat()
+        # Guardamos los datos de la sesión        
+        self.save_session(new_session_id, session_data)
+
+        return new_session_id, None
+
+    def log_out(self, session_id):
+            # Eliminar la sesión
+            self.delete_session(session_id)
+
+    def set_session_cookie(self, response, session_id, is_https):
+        cookie = SimpleCookie()
+        cookie['session_id'] = session_id
+        cookie['session_id']['path'] = '/'
+        cookie['session_id']['httponly'] = True
+        if is_https:
+            cookie['session_id']['secure'] = True
+        response.set_header('Set-Cookie', cookie.output(header='', sep=''))
+
+    def delete_session_cookie(self, response):
+        cookie = SimpleCookie()
+        cookie['session_id'] = ''
+        cookie['session_id']['path'] = '/'
+        cookie['session_id']['httponly'] = True
+        cookie['session_id']['expires'] = 'Thu, 01 Jan 1970 00:00:00 GMT'
+        response.set_header('Set-Cookie', cookie.output(header='', sep=''))

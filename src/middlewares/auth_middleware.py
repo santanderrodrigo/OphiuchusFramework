@@ -10,20 +10,26 @@ class AuthMiddleware(MiddlewareBase):
         
     def process_request(self, handler):
         session_id = handler.cookies.get('session_id')
+        print("AUTHMIddleware Session id: ", session_id)
+        handler.user_id = None
+        
         if session_id:
-            user_id = self.session_service.get_user_id(session_id)
-            if user_id:
-                handler.user_id = user_id
-            else:
+            try:
+                is_logged = self.session_service.is_loggued(session_id)
+                if is_logged:
+                    print("User is logged")
+                    session_data = self.session_service.load_session(session_id)
+                    handler.user_id = session_data.get('username')
+                else:
+                    print("User is not logged")
+                    #self.session_service.delete_session(session_id)
+            except Exception as e:
                 handler.user_id = None
-        else:
-            handler.user_id = None
-
-        if handler.user_id is None:
-            return self.redirect('/login')
+        
+        if not handler.user_id:
+            return self.redirect(f'/login?next={handler.path}')
+        
+        return None
 
     def process_response(self, handler, response):
-        if not handler.cookies.get('session_id') and handler.user_id:
-            session_id = self.session_service.create_session(handler.user_id)
-            self.session_service.set_session_cookie(response, session_id, handler.is_https)
         return response

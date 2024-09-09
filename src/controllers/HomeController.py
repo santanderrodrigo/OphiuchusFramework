@@ -20,7 +20,7 @@ class HomeController(BaseController):
         return self.view("home", context)
 
     def about(self):
-        self._session_service.create_session("user_id")
+
         # Lógica del controlador
         context = {
             "title": "About Page",

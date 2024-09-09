@@ -10,15 +10,15 @@ class LoginController(BaseController):
         user = self.post_params.get('username', [None])[0]
         password = self.post_params.get('password', [None])[0]
 
-        #obtenemos el hash de la contraseña
-        #hashed_password = self._session_service.hash_password(password)
-        #verificamos la contraseña en base al hash guardado
-        #is_correct_password = self._session_service.verify_password(stored_password, password)
-
         if user == 'admin' and password == 'admin':
-            session_id = self._session_service.create_session(user)
+            #obtenemos el id de la sesión desde la cookie   
+            session_id = self.handler.cookies.get('session_id')
+            #Hacemos login del usuario
+            session_id = self._session_service.login_user(user, session_id)
+            #guardamos la sesión en la cookie
+            response = self._session_service.set_session_cookie(self.handler, session_id, self.handler.is_https)
             response = self.redirect('/dashboard')
-            self._session_service.set_session_cookie(response, session_id)
+            
             return response
         else:
             context = {'error': 'Usuario o contraseña incorrectos', 'csrf_token': self.get_csrf_token()}
@@ -26,7 +26,7 @@ class LoginController(BaseController):
 
     def show(self):
         session_id = self.handler.cookies.get('session_id')
-        if session_id and self._session_service.is_logged(session_id):
+        if session_id and self._session_service.is_loggued(session_id):
             return self.redirect('/dashboard')
         
         context = {'csrf_token': self.get_csrf_token(), 'error': ""}
@@ -35,8 +35,8 @@ class LoginController(BaseController):
     def logout(self):
         session_id = self.handler.cookies.get('session_id')
         if session_id:
-            self._session_service.destroy_session(session_id)
-            response = self.redirect('/login')
+            self._session_service.delete_session(session_id)
+            response = self.redirect('/')
             self._session_service.delete_session_cookie(response)
             return response
 
