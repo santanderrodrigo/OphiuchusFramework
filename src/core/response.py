@@ -1,3 +1,4 @@
+# core/response.py
 from http.cookies import SimpleCookie
 
 class Response:

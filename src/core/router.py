@@ -152,10 +152,9 @@ class RequestHandler(BaseHTTPRequestHandler):
                 response = self.execute_middlewares(selected_global_middlewares, 'response', response)
 
                 # Si no es una solicitud API, gestionar la sesión
-                # Si no es una solicitud API, gestionar la sesión
                 if not is_api_route:
                     session_id = self.cookies.get('session_id')
-                    print("cookie session_id", session_id)
+                    print("ROUTER: cookie session_id", session_id)
                     # Intentar cargar la sesión actual si existe
                     if session_id and session_service.has_session(session_id):
                         print("Session exists")
@@ -166,10 +165,11 @@ class RequestHandler(BaseHTTPRequestHandler):
                             print("Session exists in response")
                             session_id = session_id.value
                         else:
-                            print("Session does not exist, creating new session")
-                            # Crear una nueva sesión ya que no existe
-                            session_id = session_service.create_session()
-                            response.set_cookie('session_id', session_id)
+                                #print("Session does not exist, creating new session")
+                                # Crear una nueva sesión ya que no existe
+                                #session_id = session_service.create_session()
+                                #response.set_cookie('session_id', session_id)
+                                pass
                             
                         
                 self._send_response(response)

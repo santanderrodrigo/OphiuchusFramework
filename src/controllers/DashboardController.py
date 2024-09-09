@@ -9,7 +9,7 @@ class DashboardController(BaseController):
 
     def show_dashboard(self):
 
-        return self.view('dashboard')
+        return self.render_view('dashboard')
 
         csrf_token = self.get_csrf_token()
         form_html = f"""

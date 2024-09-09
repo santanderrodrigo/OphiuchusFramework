@@ -15,13 +15,12 @@ class LoginController(BaseController):
             session_id = self.handler.cookies.get('session_id')
             #Hacemos login del usuario
             new_session_id = self._session_service.login_user(user, session_id)
-            #guardamos la sesión en la cookie
-            response = self.redirect('/dashboard')
-            response.set_cookie('session_id', new_session_id)
-            return response
+            # Guardamos la sesión en la cookie
+            self.add_cookie('session_id', new_session_id)
+            return self.redirect('/dashboard')
         else:
             context = {'error': 'Usuario o contraseña incorrectos', 'csrf_token': self.get_csrf_token()}
-            return self.view('login', context)
+            return self.render_view('login', context)
 
     def show(self):
         session_id = self.handler.cookies.get('session_id')
@@ -31,19 +30,18 @@ class LoginController(BaseController):
                 return self.redirect('/dashboard')
             else:
                 context = {'csrf_token': self.get_csrf_token(), 'error': ""}
-                return self.view('login', context)
+                return self.render_view('login', context)
         else:
             #creamos una nueva sesión
             new_session_id = self._session_service.create_session()
             csrf_token = self._session_service.get_csrf_token(new_session_id)
-            response = self.redirect('/login')
-            response.set_cookie('session_id', new_session_id)
+            self.add_cookie('session_id', new_session_id)
             print(f"Create new session ID: {new_session_id}")
-            return response
+            return self.redirect('/login')
         
         
         context = {'csrf_token': self.get_csrf_token(), 'error': ""}
-        return self.view('login', context)
+        return self.render_view('login', context)
     
     def logout(self):
         session_id = self.cookies.get('session_id')

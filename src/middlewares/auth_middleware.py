@@ -26,6 +26,7 @@ class AuthMiddleware(MiddlewareBase):
                 handler.user_id = None
         
         if not handler.user_id:
+            print("Middleware > User is not logged 2")
             return self.redirect(f'/login?next={handler.path}')
         
         return None
