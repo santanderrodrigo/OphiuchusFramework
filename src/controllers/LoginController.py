@@ -25,8 +25,21 @@ class LoginController(BaseController):
 
     def show(self):
         session_id = self.handler.cookies.get('session_id')
-        if session_id and self._session_service.is_logged(session_id):
-            return self.redirect('/dashboard')
+
+        if session_id and self._session_service.has_session(session_id):
+            if session_id and self._session_service.is_logged(session_id):
+                return self.redirect('/dashboard')
+            else:
+                context = {'csrf_token': self.get_csrf_token(), 'error': ""}
+                return self.view('login', context)
+        else:
+            #creamos una nueva sesión
+            new_session_id = self._session_service.create_session()
+            csrf_token = self._session_service.get_csrf_token(new_session_id)
+            response = self.redirect('/login')
+            response.set_cookie('session_id', new_session_id)
+            print(f"Create new session ID: {new_session_id}")
+            return response
         
         
         context = {'csrf_token': self.get_csrf_token(), 'error': ""}

@@ -1,10 +1,15 @@
 import os
 from core.helpers import Helpers
+from http.cookies import SimpleCookie
 
-class View:
-    def __init__(self, view_name, context={}):
+class View():
+    def __init__(self, view_name, context={}, content_type='text/html', headers=None):
         self.view_name = view_name
         self.context = context
+        self.headers = {'Content-Type': content_type}
+        if headers:
+            self.headers.update(headers)
+        self.cookies = SimpleCookie()
 
     def render(self):
         # Cargamos el archivo HTML de la plantilla
@@ -24,3 +29,29 @@ class View:
             return template
         except FileNotFoundError:
             return f"<h1>Template {self.view_name} not found</h1>"
+
+    def set_cookie(self, key, value, path='/', httponly=True, secure=False, expires=None):
+        self.cookies[key] = value
+        self.cookies[key]['path'] = path
+        self.cookies[key]['httponly'] = httponly
+        if secure:
+            self.cookies[key]['secure'] = True
+        if expires:
+            self.cookies[key]['expires'] = expires
+
+    def delete_cookie(self, key, path='/'):
+        self.cookies[key] = ''
+        self.cookies[key]['path'] = path
+        self.cookies[key]['expires'] = 'Thu, 01 Jan 1970 00:00:00 GMT'
+
+    def get_cookie(self, key):
+        return self.cookies.get(key)
+
+    def get_headers(self):
+        headers = self.headers.copy()
+        if self.cookies:
+            headers['Set-Cookie'] = self.cookies.output(header='', sep='; ')
+        return headers
+
+    def set_header(self, header, value):
+        self.headers[header] = value
