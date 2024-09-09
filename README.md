@@ -78,6 +78,7 @@ class HomeController(BaseController):
         return self.redirect('/login')
 ```
 
+Puedes añadir cookies o encabezados a la respuesta en los métodos de tus controladores utilizando los métodos `set_cookie` y `set_header` de la clase `Response`.
 Ejemplo de añadir un encabezado o cookie:
 ```python
 # controllers/HomeController.py
@@ -106,7 +107,13 @@ class User:
 ```
 
 ### 4. Crear Vistas
-Las vistas se ubican en el directorio views/. Aquí es donde se definen las plantillas HTML y la lógica de presentación.
+Las vistas se ubican en el directorio `views/`. Aquí es donde se definen las plantillas HTML y la lógica de presentación.
+
+Sintaxis de Plantillas
+En las plantillas HTML, puedes utilizar dos tipos de sintaxis para reemplazar variables con valores del contexto:
+
+`{{ VALUE }}`: Reemplaza el valor por el valor definido en el contexto, escapando caracteres especiales para evitar ataques XSS.
+`{{ !VALUE }}`: Reemplaza el valor por el valor definido en el contexto sin escapar caracteres especiales.
 
 Ejemplo:
 ```html
@@ -115,20 +122,24 @@ Ejemplo:
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Página Principal</title>
+    <title>{{ title }}</title>
 </head>
 <body>
-    <h1>Bienvenido a la página principal</h1>
-    <h2> {{ VALUE }}
+    <h1>{{ header }}</h1>
+    <p>{{ content }}</p>
+    <div>{{ !raw_html_content }}</div>
 </body>
 </html>
 ```
+En este ejemplo:
 
-{{ VALUE }} Reemplaza el valor por el valor definido en el contexto
-{{ !VALUE }} Reemplazo sin escapado de caracteres
+  `{{ title }}` se reemplazará con el valor de title en el contexto, escapando caracteres especiales.
+  `{{ header }}` se reemplazará con el valor de header en el contexto, escapando caracteres especiales.
+  `{{ content }}` se reemplazará con el valor de content en el contexto, escapando caracteres especiales.
+  `{{ !raw_html_content }}` se reemplazará con el valor de raw_html_content en el contexto sin escapar caracteres especiales, permitiendo la inclusión de HTML sin procesar.
 
 ### 5. Ejecutar la Aplicación
-Para montar el servidor y ejecutar la aplicación, utiliza el siguiente comando estando dentro de la carpeta del proyecto src/:
+Para montar el servidor y ejecutar la aplicación, utiliza el siguiente comando estando dentro de la carpeta del proyecto `src/`:
 
 ```python
 python app.py run
