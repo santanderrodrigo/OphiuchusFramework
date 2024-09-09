@@ -17,7 +17,7 @@ def register_routes(injector):
     add_route('GET', '/about', 'HomeController', 'about')
 
     # Registra rutas de la API
-    add_api_route('GET', 'users', 'UsersController', 'index2')
+    add_api_route('GET', 'users', 'UsersController', 'index')
     add_api_route('POST', 'users', 'UsersController', 'create')
     add_api_route('GET', 'users/{id}', 'UsersController', 'show')
 
