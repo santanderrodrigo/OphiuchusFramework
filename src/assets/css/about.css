@@ -6,13 +6,53 @@ body {
 }
 
 header {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Centra el contenido horizontalmente */
     background-color: #333;
     color: #fff;
-    padding: 1em 0;
+    padding: 1em;
     text-align: center;
+    position: relative; /* Permite el uso de posicionamiento absoluto para el logo */
+}
+
+header img {
+    position: absolute; /* Posiciona el logo de manera absoluta */
+    left: 1em; /* Ajusta la distancia desde el borde izquierdo */
+    height: 50px; /* Ajusta el tamaño del logo según sea necesario */
+}
+
+.container {
+    display: flex;
+}
+
+nav {
+    width: 200px;
+    background-color: #333;
+    color: #fff;
+    padding: 1em;
+}
+
+nav ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+nav ul li {
+    margin-bottom: 1em;
+}
+
+nav ul li a {
+    color: #fff;
+    text-decoration: none;
+}
+
+nav ul li a:hover {
+    text-decoration: underline;
 }
 
 main {
+    flex: 1;
     padding: 2em;
     max-width: 800px;
     margin: 0 auto;
