@@ -12,6 +12,7 @@ Este es un framework personalizado para construir aplicaciones web en Python. A 
     - `js/`
   - `core/`
     - `router.py`: Manejador de rutas y servidor HTTP.
+    - `sessions_service.py`: Servicio para manejar sesiones.
   - `routes/`
     - `routes.py`: Definición de rutas.
   - `controllers/`: Controladores de la aplicación.
@@ -131,9 +132,9 @@ Contribuir
 Si deseas contribuir a este proyecto, por favor, sigue los pasos a continuación:
 
 Haz un fork del repositorio.
-Crea una nueva rama (git checkout -b feature/nueva-funcionalidad).
-Realiza tus cambios y haz commit (git commit -am 'Agrega nueva funcionalidad').
-Haz push a la rama (git push origin feature/nueva-funcionalidad).
+Crea una nueva rama (`git checkout -b feature/nueva-funcionalidad`).
+Realiza tus cambios y haz commit (`git commit -am 'Agrega nueva funcionalidad'`).
+Haz push a la rama (`git push origin feature/nueva-funcionalida`d).
 Abre un Pull Request.
 
 
