@@ -57,8 +57,6 @@ class BaseController(BaseControllerInterface):
             csrf_token = self.session_service.generate_csrf_token()
             self.session_service.store_csrf_token(session_id, csrf_token)
             
-            # Actualizar la cookie con el token CSRF
-            self.send_cookies.append(('csrf_token', f'{csrf_token}; HttpOnly; Path=/'))
             print("No CSRF token found, generating a new one")
         
         return csrf_token

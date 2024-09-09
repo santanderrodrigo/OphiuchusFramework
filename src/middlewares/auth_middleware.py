@@ -15,14 +15,13 @@ class AuthMiddleware(MiddlewareBase):
         
         if session_id:
             try:
-                is_logged = self.session_service.is_loggued(session_id)
+                is_logged = self.session_service.is_logged(session_id)
                 if is_logged:
-                    print("User is logged")
+                    print("Middleware > User is logged")
                     session_data = self.session_service.load_session(session_id)
                     handler.user_id = session_data.get('username')
                 else:
-                    print("User is not logged")
-                    #self.session_service.delete_session(session_id)
+                    print("Middleware > User is not logged")
             except Exception as e:
                 handler.user_id = None
         

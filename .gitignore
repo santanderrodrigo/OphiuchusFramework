@@ -172,3 +172,6 @@ test.db
 
 #ignorar archivos de configuracion
 src/core/config.json
+
+#ignorar archivos de sesiones
+src/sessions.json

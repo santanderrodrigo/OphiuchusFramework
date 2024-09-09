@@ -1,5 +1,4 @@
 import uuid
-from http.cookies import SimpleCookie
 from datetime import datetime, timedelta
 import hashlib
 import hmac
@@ -111,6 +110,9 @@ class SessionService:
         session_id = str(uuid.uuid4())
         expiry_date = datetime.utcnow() + self.session_expiry
         session_data = {'expiry_date': expiry_date.isoformat()}
+        #create csrf token
+        csrf_token = self.generate_csrf_token()
+        session_data['csrf_token'] = csrf_token
         self.storage.save_session(session_id, session_data)
         return session_id
 
@@ -144,14 +146,13 @@ class SessionService:
                     self.delete_session(session_id)
 
     def has_session(self, session_id):
-            session_data = self.load_session(session_id)
-            return session_data is not None
+        session_data = self.load_session(session_id)
+        return session_data is not None
 
-    def is_loggued(self, session_id):
+    def is_logged(self, session_id):
         session_data = self.load_session(session_id)
         return session_data is not None and 'username' in session_data
 
-    # Crear una nueva sesión
     def login_user(self, username, actual_session_id):
         # Regenerar la sesión si el usuario ya tiene una sesión activa
         if actual_session_id:
@@ -169,25 +170,8 @@ class SessionService:
         # Guardamos los datos de la sesión        
         self.save_session(new_session_id, session_data)
 
-        return new_session_id, None
+        return new_session_id
 
     def log_out(self, session_id):
-            # Eliminar la sesión
-            self.delete_session(session_id)
-
-    def set_session_cookie(self, response, session_id, is_https):
-        cookie = SimpleCookie()
-        cookie['session_id'] = session_id
-        cookie['session_id']['path'] = '/'
-        cookie['session_id']['httponly'] = True
-        if is_https:
-            cookie['session_id']['secure'] = True
-        response.set_header('Set-Cookie', cookie.output(header='', sep=''))
-
-    def delete_session_cookie(self, response):
-        cookie = SimpleCookie()
-        cookie['session_id'] = ''
-        cookie['session_id']['path'] = '/'
-        cookie['session_id']['httponly'] = True
-        cookie['session_id']['expires'] = 'Thu, 01 Jan 1970 00:00:00 GMT'
-        response.set_header('Set-Cookie', cookie.output(header='', sep=''))
+        # Eliminar la sesión
+        self.delete_session(session_id)

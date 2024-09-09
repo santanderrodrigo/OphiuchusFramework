@@ -1,4 +1,3 @@
-#router.py
 import os 
 from urllib.parse import parse_qs
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -42,7 +41,7 @@ register_route_with_injector = create_route_registrar(injector)
 routes_config.register_routes(injector)
 
 class RequestHandler(BaseHTTPRequestHandler):
-    def __init__(self, *args,is_https=False, **kwargs):
+    def __init__(self, *args, is_https=False, **kwargs):
         self.is_https = is_https
         super().__init__(*args, **kwargs)
         self.path_params = {}
@@ -153,6 +152,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 response = self.execute_middlewares(selected_global_middlewares, 'response', response)
 
                 # Si no es una solicitud API, gestionar la sesión
+                # Si no es una solicitud API, gestionar la sesión
                 if not is_api_route:
                     session_id = self.cookies.get('session_id')
                     print("cookie session_id", session_id)
@@ -161,14 +161,16 @@ class RequestHandler(BaseHTTPRequestHandler):
                         print("Session exists")
                         #pass                        
                     else:
-                        if self._read_response_cookies(response, 'session_id'):
+                        session_id = response.get_cookie('session_id')
+                        if session_id:
                             print("Session exists in response")
-                            session_id = self._read_response_cookies(response, 'session_id')
+                            session_id = session_id.value
                         else:
                             print("Session does not exist, creating new session")
                             # Crear una nueva sesión ya que no existe
                             session_id = session_service.create_session()
-                            session_service.set_session_cookie(response, session_id, self.is_https)
+                            response.set_cookie('session_id', session_id)
+                            
                         
                 self._send_response(response)
                 return
@@ -180,9 +182,6 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.send_error(405, 'Method Not Allowed')
         else:
             self.send_error(404, 'Page not found')
-
-
-
 
     def get_request_data(self):
         content_length = int(self.headers.get('Content-Length', 0))
@@ -219,15 +218,6 @@ class RequestHandler(BaseHTTPRequestHandler):
         if '?' in self.path:
             self.path, query_string = self.path.split('?')
             self.query_params = parse_qs(query_string)
-
-    def _read_response_cookies(self, response, cookie_name):
-        print("cookie", response.headers)
-        if 'Set-Cookie' in response.headers:
-            cookie = SimpleCookie(response.headers['Set-Cookie'])
-            if cookie_name in cookie:
-                return cookie[cookie_name].value
-            
-        return None
 
     def _send_response(self, response):
         self.send_response(response.status)
@@ -293,4 +283,3 @@ def run_both(http_port=8080, https_port=8443,  host='0.0.0.0'):
 
     http_thread.join()
     https_thread.join()
-
