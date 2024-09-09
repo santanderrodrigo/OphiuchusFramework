@@ -78,6 +78,21 @@ class HomeController(BaseController):
         return self.redirect('/login')
 ```
 
+Ejemplo de añadir un encabezado o cookie:
+```python
+# controllers/HomeController.py
+class HomeController(BaseController):
+    def index(self):
+        self.add_cookie('session_id', new_session_id)
+        self.add_header('X-Custom-Header', 'valor_del_encabezado')
+        context = {
+            "title": "Home Page",
+            "header": "Welcome to the Home Page",
+            "content": "This is the content of the home page."
+        }
+        return self.view("home", context)
+```
+
 ### 3. Crear Modelos
 Los modelos se ubican en el directorio models/. Aquí es donde se definen las estructuras de datos y las interacciones con la base de datos.
 
