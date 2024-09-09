@@ -58,7 +58,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.handle_request('POST')
 
     def handle_request(self, method):
-        #try:
+        try:
             ##obtenemos los headers de la petición
             for header, value in self.headers.items():
                 self.headers[header] = value
@@ -70,8 +70,8 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self.serve_static_file()
             else:
                 self.handle_dynamic_request(method)
-        #except Exception as e:
-        #    self.send_error(500, f'Internal server error: {str(e)}')
+        except Exception as e:
+            self.send_error(500, f'Internal server error: {str(e)}')
 
     def serve_static_file(self):
         file_path = self.path.lstrip('/')
